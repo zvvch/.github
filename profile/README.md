@@ -5,8 +5,9 @@
       /     /_   \     /    \     /    
      /_______ \   \___/      \___/     
              \/                        
-  Vernetzt – Verantwortlich – Verbindlich  
-       Zürcher Verkehrsverbund 🚆
+
+      Vernetzt – Verantwortlich – Verbindlich  
+            Zürcher Verkehrsverbund 🚆  
 
 # Willkommen bei ZVV auf GitHub
 
