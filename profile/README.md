@@ -9,7 +9,7 @@
       Vernetzt – Verantwortlich – Verbindlich  
             Zürcher Verkehrsverbund 🚆  
 
-# Willkommen bei ZVV auf GitHub
+# Willkommen beim ZVV auf GitHub
 
 Dies ist das offizielle GitHub-Profil des Zürcher Verkehrsverbunds (ZVV). Hier teilen wir Open-Source-Projekte und Ressourcen im Zusammenhang mit dem öffentlichen Verkehr im Kanton Zürich.
 ## Über den ZVV
