@@ -1,0 +1,6 @@
+{
+  "name": "ZVV: PR-Prüfung für Workflows",
+  "description": "Schlanker Check bei Pull Requests: Actions-Pins, actionlint und zizmor, nur wenn sich .github/ geändert hat. Actions per Commit-SHA gepinnt, wie es die Organisation verlangt.",
+  "iconName": "octicon check-circle",
+  "categories": ["Automation"]
+}

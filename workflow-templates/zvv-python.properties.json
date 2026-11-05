@@ -1,0 +1,7 @@
+{
+  "name": "ZVV: Python-Tests",
+  "description": "Ein schlanker Job mit pytest bei Pull Requests. Actions per Commit-SHA gepinnt, wie es die Organisation verlangt; erwartet eine requirements.txt.",
+  "iconName": "octicon beaker",
+  "categories": ["Python"],
+  "filePatterns": ["requirements.txt", "pyproject.toml"]
+}
