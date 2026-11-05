@@ -1,0 +1,44 @@
+# ZVV-Vorlage: Python-Tests bei Pull Requests, bewusst schlank.
+# - Actions sind per vollem Commit-SHA gepinnt (Versionskommentar dahinter); die
+#   Organisation zvvch erzwingt das, ein Tag wie @v4 lässt den Lauf gar nicht starten.
+# - Ein Job, kein Matrix-Build, veraltete Läufe desselben PR werden abgebrochen.
+# - Erwartet eine requirements.txt im Repo-Root; sonst den Installationsschritt anpassen.
+# Dazu passt .github/dependabot.yml mit package-ecosystem github-actions (monatlich,
+# gruppiert), damit die SHA-Pins aktuell bleiben.
+
+name: Python-Prüfung
+
+on:
+  pull_request:
+    branches: [ $default-branch ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: python-pruefung-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pruefen:
+    name: Tests ausführen
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Python einrichten
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Abhängigkeiten installieren
+        run: python -m pip install --quiet -r requirements.txt
+
+      - name: Tests ausführen
+        run: python -m pytest

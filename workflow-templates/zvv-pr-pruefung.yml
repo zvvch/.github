@@ -1,0 +1,77 @@
+# ZVV-Vorlage: schlanker PR-Check für GitHub-Workflows.
+# - Actions sind per vollem Commit-SHA gepinnt (Versionskommentar dahinter); die
+#   Organisation zvvch erzwingt das, ein Tag wie @v4 lässt den Lauf gar nicht starten.
+# - Läuft bei jedem Pull Request, prüft aber nur bei Änderungen unter .github/
+#   (Pin-Prüfung, actionlint, zizmor). Sonst endet der Job nach dem Checkout.
+# - Spart Actions-Minuten: ein Job, kein Matrix-Build, veraltete Läufe werden abgebrochen.
+# Dazu passt .github/dependabot.yml mit package-ecosystem github-actions (monatlich,
+# gruppiert), damit die SHA-Pins aktuell bleiben.
+
+name: PR-Prüfung
+
+on:
+  pull_request:
+    branches: [ $default-branch ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-pruefung-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pruefen:
+    name: Workflows prüfen
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Geänderte Bereiche bestimmen
+        id: bereiche
+        env:
+          BASIS: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$BASIS" ]; then
+            geaendert=$(git diff --name-only "$BASIS...HEAD")
+          else
+            geaendert=$(git ls-files)
+          fi
+          workflows=false
+          if echo "$geaendert" | grep -q '^\.github/'; then workflows=true; fi
+          echo "workflows=$workflows" >> "$GITHUB_OUTPUT"
+          echo "::notice::Workflows prüfen: $workflows."
+
+      - name: Python einrichten
+        if: steps.bereiche.outputs.workflows == 'true'
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Actions-Pins prüfen
+        if: steps.bereiche.outputs.workflows == 'true'
+        run: |
+          if grep -rnE 'uses:\s*[A-Za-z0-9_.-]+/[A-Za-z0-9_./-]+@' .github/workflows \
+               | grep -vE ':[0-9]+:\s*#' \
+               | grep -v '/\.github/workflows/' \
+               | grep -vE '@[0-9a-f]{40}(\s|$)'; then
+            echo "::error::Jede Action braucht einen vollen Commit-SHA (40 Zeichen) statt eines Tags."
+            exit 1
+          fi
+          echo "Alle Actions sind per Commit-SHA gepinnt."
+
+      - name: Workflows prüfen (actionlint, zizmor)
+        if: steps.bereiche.outputs.workflows == 'true'
+        run: |
+          curl --fail --silent --show-error --location https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz -o "$RUNNER_TEMP/actionlint.tar.gz"
+          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $RUNNER_TEMP/actionlint.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP" actionlint
+          "$RUNNER_TEMP/actionlint" -shellcheck= -pyflakes=
+          python -m pip install --quiet zizmor==1.31.1
+          zizmor --offline --no-progress --min-severity high --min-confidence medium .github/workflows
